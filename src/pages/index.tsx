@@ -1,126 +1,98 @@
-import Head from 'next/head';
-import Image from 'next/image';
-import { Inter } from 'next/font/google';
-import styles from '@/styles/Home.module.css';
+import { useEffect, useState } from 'react';
+import { fetchUserInfo } from '@/lib/spotify';
 
-const inter = Inter({ subsets: ['latin'] });
-
+interface User {
+  display_name: string;
+  images: {
+    url: string;
+  }[];
+}
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/getAccessToken');
+        const { accessToken } = await response.json();
+        console.log(accessToken);
+        const userInfo = await fetchUserInfo(accessToken);
+        console.log(userInfo);
+        setUser(userInfo);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    let expiresIn = 3600;
+    const refreshAccessToken = async () => {
+      try {
+        const response = await fetch('/api/refreshAccessToken');
+        const { access_token, expires_in } = await response.json();
+        console.log(access_token);
+        expiresIn = expires_in;
+        const userInfo = await fetchUserInfo(access_token);
+        console.log(userInfo);
+        setUser(userInfo);
+      } catch (error) {
+        console.error('Failed to refresh access token index :', error);
+      }
+    };
+
+    const expirationTimeMs = Date.now() + expiresIn * 1000; // Add expires_in to calculate expiration time
+
+    const tokenRefreshTimeout = setTimeout(
+      refreshAccessToken,
+      expirationTimeMs,
+    );
+    return () => clearTimeout(tokenRefreshTimeout);
+  }, []);
+
   return (
-    <>
-      <Head>
-        <title>TypeScript starter for Next.js</title>
-        <meta
-          name="description"
-          content="TypeScript starter for Next.js that includes all you need to build amazing apps"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>src/pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=typescript-nextjs-starter"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
+    <div className="min-h-screen grid grid-cols-5 gap-2 p-2">
+      {/* Left column */}
+      <div className="col-span-1 flex flex-col">
+        <div className="h-32 bg-primary rounded-lg flex items-center">
+          {user && (
+            <div className="flex">
+              <div className="flex-col">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={user.images[0].url}
+                  width="70"
+                  height="70"
+                  alt="User Profile"
+                  className="rounded-full"
+                />
+              </div>
+              <div className="flex-col">
+                <p className="text-white text-center font-bold">
+                  Hello, {user.display_name}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
+        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow"></div>
+      </div>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
+      {/* Middle column */}
+      <div className="col-span-3 flex flex-col">
+        <div className="h-32 bg-primary rounded-lg"></div>
+        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow"></div>
+      </div>
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=typescript-nextjs-starter"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
+      {/* Right column */}
+      <div className="col-span-1 flex flex-col">
+        <div className="h-64 bg-primary rounded-lg"></div>
+        <div className="h-72 bg-primary rounded-lg mt-2 flex-grow"></div>
+      </div>
 
-          <a
-            href="https://nextjs.org/learn?utm_source=typescript-nextjs-starter"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=typescript-nextjs-starter"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=typescript-nextjs-starter"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-    </>
+      {/* Bottom column */}
+      <div className="col-span-5 rounded-lg bg-primary"></div>
+    </div>
   );
 }
