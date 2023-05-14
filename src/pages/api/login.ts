@@ -19,6 +19,10 @@ export default withSession(async function login(
     'user-top-read',
     'playlist-read-private',
     'playlist-read-collaborative',
+    'user-read-recently-played',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'user-read-currently-playing',
   ];
 
   const state = crypto.randomBytes(16).toString('hex');

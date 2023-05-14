@@ -13,3 +13,17 @@ export async function fetchUserInfo(accessToken: string) {
     throw error;
   }
 }
+
+export async function getCurrentlyPlaying(accessToken: string) {
+  try {
+    const response = await axios.get('https://api.spotify.com/v1/me/player', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch playback state:', error);
+    throw error;
+  }
+}
