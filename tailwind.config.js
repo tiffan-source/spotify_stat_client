@@ -13,6 +13,7 @@ module.exports = {
       colors: {
         main: '#2B2D31',
         primary: '#313338',
+        secondary: '#443C68',
       },
       gridTemplateColumns: {
         16: 'repeat(16, minmax(0, 1fr))',

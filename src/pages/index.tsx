@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fetchUserInfo, getCurrentlyPlaying } from '@/lib/spotify';
+import {
+  fetchUserInfo,
+  getCurrentlyPlaying,
+  getRecentlyPlayed,
+} from '@/lib/spotify';
 
 interface User {
   display_name: string;
@@ -21,10 +25,27 @@ interface CurrentlyPlaying {
   };
 }
 
+interface RecentlyPlayed {
+  items: {
+    played_at: string;
+    track: {
+      artists: {
+        name: string;
+      }[];
+      name: string;
+      duration_ms: number;
+    };
+  }[];
+}
+
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [currentlyPlaying, setCurrentlyPlaying] =
     useState<CurrentlyPlaying | null>(null);
+  const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayed | null>(
+    null,
+  );
+  const [formattedDuration, setFormattedDuration] = useState<string>('');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -43,50 +64,52 @@ export default function Home() {
     fetchUser();
   }, []);
 
-  /*
   useEffect(() => {
-    let expiresIn = 3600;
-    const refreshAccessToken = async () => {
-      try {
-        const response = await fetch('/api/refreshAccessToken');
-        const { access_token, expires_in } = await response.json();
-        console.log('refreshAccessToken access_token', access_token);
-        expiresIn = expires_in;
-        const userInfo = await fetchUserInfo(access_token);
-        setUser(userInfo);
-
-        const expirationTimeMs = Date.now() + expiresIn * 1000;
-
-        const tokenRefreshTimeout = setTimeout(
-          refreshAccessToken,
-          expirationTimeMs - Date.now(),
-        );
-        return () => clearTimeout(tokenRefreshTimeout);
-      } catch (error) {
-        console.error('Failed to refresh access token:', error);
-      }
-    };
-
-    // Start the initial token refresh
-    refreshAccessToken();
-  }, []);
-*/
-
-  useEffect(() => {
-    const fetchCurrentlyPlaying = async () => {
+    const fetchData = async () => {
       try {
         const responses = await fetch('/api/getAccessToken');
         const { accessToken } = await responses.json();
-        console.log('fetchCurrentlyPlaying accessToken', accessToken);
-        const response = await getCurrentlyPlaying(accessToken);
-        console.log(response, 'currently playing');
-        setCurrentlyPlaying(response);
+        console.log('fetchData accessToken', accessToken);
+
+        const [currentlyPlayingResponse, recentlyPlayedResponse] =
+          await Promise.all([
+            getCurrentlyPlaying(accessToken),
+            getRecentlyPlayed(accessToken),
+          ]);
+
+        console.log(currentlyPlayingResponse, 'currently playing');
+        console.log(recentlyPlayedResponse, 'recently played');
+
+        setCurrentlyPlaying(currentlyPlayingResponse);
+        setRecentlyPlayed(recentlyPlayedResponse);
+
+        // Calculate and format the duration for currently playing track
+        if (currentlyPlayingResponse?.item?.artists[0]?.name) {
+          const durationInSeconds = Math.floor(
+            currentlyPlayingResponse.item.duration_ms / 1000,
+          );
+          const minutes = Math.floor(durationInSeconds / 60);
+          const seconds = durationInSeconds % 60;
+          setFormattedDuration(
+            `${minutes}:${seconds.toString().padStart(2, '0')}`,
+          );
+        } else if (recentlyPlayedResponse?.items[0]?.track?.name) {
+          // Calculate and format the duration for recently played track
+          const durationInSeconds = Math.floor(
+            recentlyPlayedResponse.items[0].track.duration_ms / 1000,
+          );
+          const minutes = Math.floor(durationInSeconds / 60);
+          const seconds = durationInSeconds % 60;
+          setFormattedDuration(
+            `${minutes}:${seconds.toString().padStart(2, '0')}`,
+          );
+        }
       } catch (error) {
-        console.error('Failed to fetch currently playing track:', error);
+        console.error('Failed to fetch data:', error);
       }
     };
 
-    fetchCurrentlyPlaying();
+    fetchData();
   }, []);
 
   return (
@@ -108,10 +131,10 @@ export default function Home() {
               </div>
               <div className="flex-col">
                 <div className="flex flex-row items-center">
-                  <p className="text-white font-bold">
-                    Hello,{' '}
-                    {user.display_name.length > 15
-                      ? `${user.display_name.substring(0, 15)}...`
+                  <p className="text-white font-bold whitespace-nowrap">
+                    Hi,{' '}
+                    {user.display_name.length > 10
+                      ? `${user.display_name.substring(0, 10)}...`
                       : user.display_name}
                   </p>
 
@@ -140,27 +163,88 @@ export default function Home() {
                     </div>
                   )}
                   {currentlyPlaying?.currently_playing_type === 'ad' && (
-                    <div>Advertisement</div>
+                    <div className="text-white text-left">
+                      Advertisement - Advertisement - Advertisement
+                    </div>
+                  )}
+                  {currentlyPlaying?.currently_playing_type === undefined && (
+                    <div
+                      className={`text-white text-left ${
+                        recentlyPlayed?.items[0]?.track.name
+                          ? 'animation-slide-in-right'
+                          : ''
+                      }`}
+                    >
+                      {recentlyPlayed?.items[0]?.track.artists[0].name} -{' '}
+                      {recentlyPlayed?.items[0]?.track.name}
+                    </div>
                   )}
                 </div>
 
                 <div className="flex items-center">
-                  <div className="w-full h-1 bg-white rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-white rounded-full overflow-hidden">
                     <progress
                       className="w-full h-full bg-primary"
                       value={50}
                       max={100}
                     />
                   </div>
+                  <p className="text-white text-[.6rem] ml-2">
+                    {formattedDuration}
+                  </p>
                 </div>
+
                 <p className="text-white text-[.6rem] text-left font-bold">
-                  On {currentlyPlaying?.device.name}
+                  {currentlyPlaying?.device
+                    ? `On ${currentlyPlaying.device.name}`
+                    : 'No device active'}
                 </p>
               </div>
             </div>
           )}
         </div>
-        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow"></div>
+        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow overflow-hidden">
+          <div className="flex items-center justify-between p-2">
+            <h1 className="text-white text-lg font-bold">
+              Recently Played Tracks
+            </h1>
+            <div className="flex items-center"></div>
+          </div>
+          <div className="">
+            <table className="m-2">
+              <thead>
+                <tr className="bg-secondary text-white text-[.8rem] ici rounded-full">
+                  <th className="">#</th>
+                  <th className="">Title</th>
+                  <th className="">Artist(s)</th>
+                  <th className="">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentlyPlayed?.items.map((item, index) => {
+                  const playedAtDate = new Date(item.played_at);
+                  const formattedDate = playedAtDate.toLocaleDateString(
+                    'en-US',
+                    {
+                      month: '2-digit',
+                      day: '2-digit',
+                      year: '2-digit',
+                    },
+                  );
+
+                  return (
+                    <tr key={index} className="text-white text-[.8rem]">
+                      <td className=" ">{index + 1}</td>
+                      <td className=" ">{item.track.name}</td>
+                      <td className=" ">{item.track.artists[0].name}</td>
+                      <td className=" ">{formattedDate}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* Middle column */}
