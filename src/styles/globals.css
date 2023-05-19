@@ -75,3 +75,28 @@ body {
   animation: slideInRight 10s linear infinite;
   z-index: -1;
 }
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  max-height: 50%; height: 50%;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+/* Scrollbar */

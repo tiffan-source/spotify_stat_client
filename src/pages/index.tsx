@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import {
   fetchUserInfo,
   getCurrentlyPlaying,
   getRecentlyPlayed,
 } from '@/lib/spotify';
+
+function truncateString(str: string, maxLength: number) {
+  if (str.length > maxLength) {
+    return `${str.substring(0, maxLength)}...`;
+  }
+  return str;
+}
 
 interface User {
   display_name: string;
@@ -29,6 +37,9 @@ interface RecentlyPlayed {
   items: {
     played_at: string;
     track: {
+      external_urls: {
+        spotify: string;
+      };
       artists: {
         name: string;
       }[];
@@ -123,15 +134,15 @@ export default function Home() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={user.images[0].url}
-                  width="70"
-                  height="70"
+                  width="60"
+                  height="60"
                   alt="User Profile"
                   className="rounded-full max-w-none"
                 />
               </div>
               <div className="flex-col">
                 <div className="flex flex-row items-center">
-                  <p className="text-white font-bold whitespace-nowrap">
+                  <p className="text-white font-bold whitespace-nowrap text-xs">
                     Hi,{' '}
                     {user.display_name.length > 10
                       ? `${user.display_name.substring(0, 10)}...`
@@ -163,7 +174,7 @@ export default function Home() {
                     </div>
                   )}
                   {currentlyPlaying?.currently_playing_type === 'ad' && (
-                    <div className="text-white text-left">
+                    <div className="text-white text-left animation-slide-in-right">
                       Advertisement - Advertisement - Advertisement
                     </div>
                   )}
@@ -181,15 +192,15 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="flex items-center">
-                  <div className="w-full h-1.5 bg-white rounded-full overflow-hidden">
+                <div className="flex items-center ici">
+                  <div className="h-1.5 bg-white rounded-full overflow-hidden">
                     <progress
-                      className="w-full h-full bg-primary"
+                      className="h-full bg-primary"
                       value={50}
                       max={100}
                     />
                   </div>
-                  <p className="text-white text-[.6rem] ml-2">
+                  <p className="text-white text-[.6rem] font-thin ml-2">
                     {formattedDuration}
                   </p>
                 </div>
@@ -204,40 +215,56 @@ export default function Home() {
           )}
         </div>
         <div className="h-32 bg-primary rounded-lg mt-2 flex-grow overflow-hidden">
-          <div className="flex items-center justify-between p-2">
-            <h1 className="text-white text-lg font-bold">
+          <div className="flex justify-center p-3">
+            <Image src="/svg/clock.svg" alt="Clock" width={20} height={20} />
+            <h1 className="pl-2 text-white text-sm font-bold">
               Recently Played Tracks
             </h1>
-            <div className="flex items-center"></div>
           </div>
-          <div className="">
-            <table className="m-2">
-              <thead>
-                <tr className="bg-secondary text-white text-[.8rem] ici rounded-full">
-                  <th className="">#</th>
-                  <th className="">Title</th>
-                  <th className="">Artist(s)</th>
-                  <th className="">Date</th>
+          <div className=" h-full overflow-y-auto pb-10">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 m-2">
+              <tbody className="overflow-hidden">
+                <tr className="text-md text-white font-medium">
+                  <td className="">#</td>
+                  <td className="">Title</td>
+                  <td className="">Artist(s)</td>
+                  <td className="">Date</td>
                 </tr>
-              </thead>
-              <tbody>
                 {recentlyPlayed?.items.map((item, index) => {
                   const playedAtDate = new Date(item.played_at);
-                  const formattedDate = playedAtDate.toLocaleDateString(
-                    'en-US',
+                  const formattedTime = playedAtDate.toLocaleTimeString(
+                    'fr-FR',
                     {
-                      month: '2-digit',
-                      day: '2-digit',
-                      year: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
                     },
                   );
 
                   return (
-                    <tr key={index} className="text-white text-[.8rem]">
+                    <tr
+                      key={index}
+                      className="text-white text-xxs hover:bg-gray-50 hover:text-gray-700"
+                    >
                       <td className=" ">{index + 1}</td>
-                      <td className=" ">{item.track.name}</td>
-                      <td className=" ">{item.track.artists[0].name}</td>
-                      <td className=" ">{formattedDate}</td>
+                      <td className="whitespace-nowrap">
+                        <a
+                          href={item.track.external_urls.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {truncateString(item.track.name, 20)}
+                        </a>
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <a
+                          href={item.track.external_urls.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {item.track.artists[0].name}
+                        </a>
+                      </td>
+                      <td className="font-thin">{formattedTime}</td>
                     </tr>
                   );
                 })}
@@ -249,7 +276,21 @@ export default function Home() {
 
       {/* Middle column */}
       <div className="col-span-3 flex flex-col">
-        <div className="h-32 bg-primary rounded-lg"></div>
+        <div className="h-32 bg-primary rounded-lg">
+          <div className="flex flex-col justify-center h-full">
+            <div className="flex justify-between px-5">
+              <button className="bg-secondary text-white font-bold px-4 py-2 rounded-full">
+                Top Tracks
+              </button>
+              <button className="bg-white text-primary font-bold px-4 py-2 rounded-full">
+                Top Artists
+              </button>
+              <button className="bg-white text-primary font-bold px-4 py-2 rounded-full">
+                Top Playlists
+              </button>
+            </div>
+          </div>
+        </div>
         <div className="h-32 bg-primary rounded-lg mt-2 flex-grow"></div>
       </div>
 
