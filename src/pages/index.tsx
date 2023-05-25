@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import RecentlyPlayedTracks from '@/components/recently-played';
 import {
   fetchUserInfo,
   getCurrentlyPlaying,
   getRecentlyPlayed,
 } from '@/lib/spotify';
-
-function truncateString(str: string, maxLength: number) {
-  if (str.length > maxLength) {
-    return `${str.substring(0, maxLength)}...`;
-  }
-  return str;
-}
 
 interface User {
   display_name: string;
@@ -57,6 +50,22 @@ export default function Home() {
     null,
   );
   const [formattedDuration, setFormattedDuration] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('tracks');
+
+  const [selectedOption, setSelectedOption] = useState('Last 4 weeks');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen((prevIsDropdownOpen) => !prevIsDropdownOpen);
+  };
+
+  const handleOptionSelect = (option: any) => {
+    setSelectedOption(option);
+    setIsDropdownOpen(false);
+  };
+  const handleTabClick = (tab: string) => {
+    setActiveTab(tab);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -130,7 +139,7 @@ export default function Home() {
         <div className="h-32 bg-primary rounded-lg flex items-center overflow-hidden">
           {user && (
             <div className="flex">
-              <div className="flex-col p-2">
+              <div className="flex-col p-2 md:max-xl:hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={user.images[0].url}
@@ -140,7 +149,7 @@ export default function Home() {
                   className="rounded-full max-w-none"
                 />
               </div>
-              <div className="flex-col">
+              <div className="flex-col p-3">
                 <div className="flex flex-row items-center">
                   <p className="text-white font-bold whitespace-nowrap text-xs">
                     Hi,{' '}
@@ -160,7 +169,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className=" overflow-hidden">
+                <div className="overflow-hidden">
                   {currentlyPlaying?.currently_playing_type === 'track' && (
                     <div
                       className={`text-white text-left ${
@@ -214,64 +223,7 @@ export default function Home() {
             </div>
           )}
         </div>
-        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow overflow-hidden">
-          <div className="flex justify-center p-3">
-            <Image src="/svg/clock.svg" alt="Clock" width={20} height={20} />
-            <h1 className="pl-2 text-white text-sm font-bold">
-              Recently Played Tracks
-            </h1>
-          </div>
-          <div className=" h-full overflow-y-auto pb-10">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 m-2">
-              <tbody className="overflow-hidden">
-                <tr className="text-md text-white font-medium">
-                  <td className="">#</td>
-                  <td className="">Title</td>
-                  <td className="">Artist(s)</td>
-                  <td className="">Date</td>
-                </tr>
-                {recentlyPlayed?.items.map((item, index) => {
-                  const playedAtDate = new Date(item.played_at);
-                  const formattedTime = playedAtDate.toLocaleTimeString(
-                    'fr-FR',
-                    {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    },
-                  );
-
-                  return (
-                    <tr
-                      key={index}
-                      className="text-white text-xxs hover:bg-gray-50 hover:text-gray-700"
-                    >
-                      <td className=" ">{index + 1}</td>
-                      <td className="whitespace-nowrap">
-                        <a
-                          href={item.track.external_urls.spotify}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {truncateString(item.track.name, 20)}
-                        </a>
-                      </td>
-                      <td className="whitespace-nowrap">
-                        <a
-                          href={item.track.external_urls.spotify}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {item.track.artists[0].name}
-                        </a>
-                      </td>
-                      <td className="font-thin">{formattedTime}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <RecentlyPlayedTracks recentlyPlayed={recentlyPlayed} />
       </div>
 
       {/* Middle column */}
@@ -279,19 +231,103 @@ export default function Home() {
         <div className="h-32 bg-primary rounded-lg">
           <div className="flex flex-col justify-center h-full">
             <div className="flex justify-between px-5">
-              <button className="bg-secondary text-white font-bold px-4 py-2 rounded-full">
+              <button
+                className={`font-bold px-4 py-2 rounded-full ${
+                  activeTab === 'tracks'
+                    ? 'active bg-secondary text-white'
+                    : 'bg-white'
+                }`}
+                onClick={() => handleTabClick('tracks')}
+              >
                 Top Tracks
               </button>
-              <button className="bg-white text-primary font-bold px-4 py-2 rounded-full">
+              <button
+                className={` font-bold px-4 py-2 rounded-full ${
+                  activeTab === 'artists'
+                    ? 'active bg-secondary text-white'
+                    : 'bg-white'
+                }`}
+                onClick={() => handleTabClick('artists')}
+              >
                 Top Artists
               </button>
-              <button className="bg-white text-primary font-bold px-4 py-2 rounded-full">
+              <button
+                className={` font-bold px-4 py-2 rounded-full ${
+                  activeTab === 'playlists'
+                    ? 'active bg-secondary text-white'
+                    : 'bg-white'
+                }`}
+                onClick={() => handleTabClick('playlists')}
+              >
                 Top Playlists
               </button>
             </div>
           </div>
         </div>
-        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow"></div>
+        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow">
+          <div className={`${activeTab === 'tracks' ? 'active' : 'hidden'}`}>
+            <div className="flex justify-center p-3">
+              <div>
+                <h1 className="pl-2 text-white text-2xl font-bold">
+                  Jordan&apos;s Top Tracks
+                </h1>
+                <div className="flex justify-center p-2">
+                  <div className="relative inline-block">
+                    <button
+                      onClick={handleDropdownToggle}
+                      className="text-white hover:bg-gray-200 hover:text-primary focus:ring-4 focus:outline-none font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex items-center"
+                    >
+                      {selectedOption}
+                      <svg
+                        className="w-4 h-4 ml-2"
+                        aria-hidden="true"
+                        fill="#443C68"
+                        stroke="#443C68"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7"
+                        ></path>
+                      </svg>
+                    </button>
+                    {isDropdownOpen && (
+                      <div className="absolute top-10 left-0 w-full bg-white shadow-md rounded-lg text-xs">
+                        <div
+                          className="p-2 cursor-pointer hover:bg-gray-200"
+                          onClick={() => handleOptionSelect('Last 4 Weeks')}
+                        >
+                          Last 4 Weeks
+                        </div>
+                        <div
+                          className="p-2 cursor-pointer hover:bg-gray-200"
+                          onClick={() => handleOptionSelect('Last 6 Months')}
+                        >
+                          Last 6 Months
+                        </div>
+                        <div
+                          className="p-2 cursor-pointer hover:bg-gray-200"
+                          onClick={() => handleOptionSelect('All Time')}
+                        >
+                          All Time
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className={`${activeTab === 'artists' ? 'active' : 'hidden'}`}>
+            2
+          </div>
+          <div className={`${activeTab === 'playlists' ? 'active' : 'hidden'}`}>
+            3
+          </div>
+        </div>
       </div>
 
       {/* Right column */}

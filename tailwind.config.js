@@ -15,6 +15,9 @@ module.exports = {
         primary: '#313338',
         secondary: '#443C68',
       },
+      fontSize: {
+        xxs: '.6rem',
+      },
       gridTemplateColumns: {
         16: 'repeat(16, minmax(0, 1fr))',
       },
