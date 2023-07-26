@@ -1,46 +1,19 @@
 import { useEffect, useState } from 'react';
-import RecentlyPlayedTracks from '@/components/recently-played';
+import RecentlyPlayedTracks from '@/components/RecentlyPlayed';
 import {
   fetchUserInfo,
   getCurrentlyPlaying,
   getRecentlyPlayed,
+  getTopArtists,
+  getTopTracks,
 } from '@/lib/spotify';
 
-interface User {
-  display_name: string;
-  images: {
-    url: string;
-  }[];
-}
-interface CurrentlyPlaying {
-  is_playing: boolean;
-  currently_playing_type: string;
-  item: {
-    artists: {
-      name: string;
-    }[];
-    name: string;
-  };
-  device: {
-    name: string;
-  };
-}
+import TopTracks from '@/components/TopTracks';
+import TopArtists from '@/components/TopArtists';
 
-interface RecentlyPlayed {
-  items: {
-    played_at: string;
-    track: {
-      external_urls: {
-        spotify: string;
-      };
-      artists: {
-        name: string;
-      }[];
-      name: string;
-      duration_ms: number;
-    };
-  }[];
-}
+import { CurrentlyPlaying, RecentlyPlayed, User } from '@/lib/interfaces';
+import UserProfile from '@/components/UserProfile';
+import TopGenres from '@/components/TopGenres';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -49,24 +22,49 @@ export default function Home() {
   const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayed | null>(
     null,
   );
+  const [topTracks, setTopTracks] = useState(null);
+  const [topArtists, setTopArtists] = useState(null);
+  const [timeRange, setTimeRange] = useState('medium_term');
+
   const [formattedDuration, setFormattedDuration] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('tracks');
+  const [activeTab, setActiveTab] = useState<
+    'tracks' | 'artists' | 'playlists'
+  >('tracks');
 
-  const [selectedOption, setSelectedOption] = useState('Last 4 weeks');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const handleDropdownToggle = () => {
-    setIsDropdownOpen((prevIsDropdownOpen) => !prevIsDropdownOpen);
-  };
-
-  const handleOptionSelect = (option: any) => {
-    setSelectedOption(option);
-    setIsDropdownOpen(false);
-  };
-  const handleTabClick = (tab: string) => {
+  const handleTabClick = (tab: 'tracks' | 'artists' | 'playlists') => {
     setActiveTab(tab);
   };
 
+  const handleTimeRangeChange = (event: any) => {
+    setTimeRange(event.target.value);
+  };
+
+  let activeContent;
+  if (activeTab === 'tracks') {
+    activeContent = (
+      <TopTracks
+        topTracks={topTracks}
+        timeRange={timeRange}
+        handleTimeRangeChange={handleTimeRangeChange}
+      />
+    );
+  } else if (activeTab === 'artists') {
+    activeContent = (
+      <TopArtists
+        topArtists={topArtists}
+        timeRange={timeRange}
+        handleTimeRangeChange={handleTimeRangeChange}
+      />
+    );
+  } else {
+    activeContent = (
+      <TopGenres
+        topArtists={topArtists}
+        timeRange={timeRange}
+        handleTimeRangeChange={handleTimeRangeChange}
+      />
+    );
+  }
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -91,17 +89,27 @@ export default function Home() {
         const { accessToken } = await responses.json();
         console.log('fetchData accessToken', accessToken);
 
-        const [currentlyPlayingResponse, recentlyPlayedResponse] =
-          await Promise.all([
-            getCurrentlyPlaying(accessToken),
-            getRecentlyPlayed(accessToken),
-          ]);
+        const [
+          currentlyPlayingResponse,
+          recentlyPlayedResponse,
+          topTracksResponse,
+          topArtistsResponse,
+        ] = await Promise.all([
+          getCurrentlyPlaying(accessToken),
+          getRecentlyPlayed(accessToken),
+          getTopTracks(accessToken, timeRange),
+          getTopArtists(accessToken, timeRange),
+        ]);
 
         console.log(currentlyPlayingResponse, 'currently playing');
         console.log(recentlyPlayedResponse, 'recently played');
+        console.log(topTracksResponse, 'top tracks');
+        console.log(topArtistsResponse, 'top artists');
 
         setCurrentlyPlaying(currentlyPlayingResponse);
         setRecentlyPlayed(recentlyPlayedResponse);
+        setTopTracks(topTracksResponse);
+        setTopArtists(topArtistsResponse);
 
         // Calculate and format the duration for currently playing track
         if (currentlyPlayingResponse?.item?.artists[0]?.name) {
@@ -130,99 +138,18 @@ export default function Home() {
     };
 
     fetchData();
-  }, []);
+  }, [timeRange, currentlyPlaying]);
 
   return (
     <div className="min-h-screen grid grid-cols-5 gap-2 p-2">
       {/* Left column */}
       <div className="col-span-1 flex flex-col">
-        <div className="h-32 bg-primary rounded-lg flex items-center overflow-hidden">
-          {user && (
-            <div className="flex">
-              <div className="flex-col p-2 md:max-xl:hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={user.images[0].url}
-                  width="60"
-                  height="60"
-                  alt="User Profile"
-                  className="rounded-full max-w-none"
-                />
-              </div>
-              <div className="flex-col p-3">
-                <div className="flex flex-row items-center">
-                  <p className="text-white font-bold whitespace-nowrap text-xs">
-                    Hi,{' '}
-                    {user.display_name.length > 10
-                      ? `${user.display_name.substring(0, 10)}...`
-                      : user.display_name}
-                  </p>
-
-                  <p
-                    className={`text-white text-[.5rem] font-bold mr-2 ${
-                      currentlyPlaying?.is_playing
-                        ? 'bg-green-700'
-                        : 'bg-gray-700'
-                    } rounded-full w-14 h-6 flex items-center justify-center ml-2`}
-                  >
-                    {currentlyPlaying?.is_playing ? 'Active' : 'Inactive'}
-                  </p>
-                </div>
-
-                <div className="overflow-hidden">
-                  {currentlyPlaying?.currently_playing_type === 'track' && (
-                    <div
-                      className={`text-white text-left ${
-                        currentlyPlaying?.item.name
-                          ? 'animation-slide-in-right'
-                          : ''
-                      }`}
-                    >
-                      {currentlyPlaying?.item.name} -{' '}
-                      {currentlyPlaying?.item.artists[0].name}
-                    </div>
-                  )}
-                  {currentlyPlaying?.currently_playing_type === 'ad' && (
-                    <div className="text-white text-left animation-slide-in-right">
-                      Advertisement - Advertisement - Advertisement
-                    </div>
-                  )}
-                  {currentlyPlaying?.currently_playing_type === undefined && (
-                    <div
-                      className={`text-white text-left ${
-                        recentlyPlayed?.items[0]?.track.name
-                          ? 'animation-slide-in-right'
-                          : ''
-                      }`}
-                    >
-                      {recentlyPlayed?.items[0]?.track.artists[0].name} -{' '}
-                      {recentlyPlayed?.items[0]?.track.name}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center ici">
-                  <div className="h-1.5 bg-white rounded-full overflow-hidden">
-                    <progress
-                      className="h-full bg-primary"
-                      value={50}
-                      max={100}
-                    />
-                  </div>
-                  <p className="text-white text-[.6rem] font-thin ml-2">
-                    {formattedDuration}
-                  </p>
-                </div>
-
-                <p className="text-white text-[.6rem] text-left font-bold">
-                  {currentlyPlaying?.device
-                    ? `On ${currentlyPlaying.device.name}`
-                    : 'No device active'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        <UserProfile
+          currentlyPlaying={currentlyPlaying}
+          user={user}
+          recentlyPlayed={recentlyPlayed}
+          formattedDuration={formattedDuration}
+        />
         <RecentlyPlayedTracks recentlyPlayed={recentlyPlayed} />
       </div>
 
@@ -264,72 +191,9 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="h-32 bg-primary rounded-lg mt-2 flex-grow">
-          <div className={`${activeTab === 'tracks' ? 'active' : 'hidden'}`}>
-            <div className="flex justify-center p-3">
-              <div>
-                <h1 className="pl-2 text-white text-2xl font-bold">
-                  Jordan&apos;s Top Tracks
-                </h1>
-                <div className="flex justify-center p-2">
-                  <div className="relative inline-block">
-                    <button
-                      onClick={handleDropdownToggle}
-                      className="text-white hover:bg-gray-200 hover:text-primary focus:ring-4 focus:outline-none font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex items-center"
-                    >
-                      {selectedOption}
-                      <svg
-                        className="w-4 h-4 ml-2"
-                        aria-hidden="true"
-                        fill="#443C68"
-                        stroke="#443C68"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        ></path>
-                      </svg>
-                    </button>
-                    {isDropdownOpen && (
-                      <div className="absolute top-10 left-0 w-full bg-white shadow-md rounded-lg text-xs">
-                        <div
-                          className="p-2 cursor-pointer hover:bg-gray-200"
-                          onClick={() => handleOptionSelect('Last 4 Weeks')}
-                        >
-                          Last 4 Weeks
-                        </div>
-                        <div
-                          className="p-2 cursor-pointer hover:bg-gray-200"
-                          onClick={() => handleOptionSelect('Last 6 Months')}
-                        >
-                          Last 6 Months
-                        </div>
-                        <div
-                          className="p-2 cursor-pointer hover:bg-gray-200"
-                          onClick={() => handleOptionSelect('All Time')}
-                        >
-                          All Time
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className={`${activeTab === 'artists' ? 'active' : 'hidden'}`}>
-            2
-          </div>
-          <div className={`${activeTab === 'playlists' ? 'active' : 'hidden'}`}>
-            3
-          </div>
-        </div>
+        {/* Conditionally render the active content based on the activeTab state */}
+        {activeContent}
       </div>
-
       {/* Right column */}
       <div className="col-span-1 flex flex-col">
         <div className="h-64 bg-primary rounded-lg"></div>
@@ -341,3 +205,23 @@ export default function Home() {
     </div>
   );
 }
+
+/*
+export const getServerSideProps = withSession(async ({ req }: any) => {
+  // Here, you can perform your authorization check
+  const userToken = req.session.get('access_token');
+
+  if (!userToken) {
+    return {
+      redirect: {
+        destination: '/login', // Redirect to login page if not authenticated
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { userToken },
+  };
+});
+*/

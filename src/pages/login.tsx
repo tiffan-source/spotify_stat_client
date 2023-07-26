@@ -13,3 +13,23 @@ export default function LoginPage() {
     </div>
   );
 }
+/*
+
+export const getServerSideProps = withSession(async ({ req }: any) => {
+  // Here, you can perform your authorization check
+  const userToken = req.session.get('access_token');
+
+  if (userToken) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { userToken },
+  };
+});
+*/

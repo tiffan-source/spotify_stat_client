@@ -1,24 +1,9 @@
 import Image from 'next/image';
 import { truncateString } from '@/lib/utils';
+import { RecentlyPlayed } from '@/lib/interfaces';
 
 interface RecentlyPlayedProps {
   recentlyPlayed: RecentlyPlayed | null;
-}
-
-interface RecentlyPlayed {
-  items: {
-    played_at: string;
-    track: {
-      external_urls: {
-        spotify: string;
-      };
-      artists: {
-        name: string;
-      }[];
-      name: string;
-      duration_ms: number;
-    };
-  }[];
 }
 
 const RecentlyPlayedTracks: React.FC<RecentlyPlayedProps> = ({
@@ -36,10 +21,10 @@ const RecentlyPlayedTracks: React.FC<RecentlyPlayedProps> = ({
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 m-2">
           <tbody className="overflow-hidden">
             <tr className="text-md text-white font-medium">
-              <td className="">#</td>
-              <td className="">Title</td>
-              <td className="">Artist(s)</td>
-              <td className="md:max-xl:hidden">Date</td>
+              <td className=""></td>
+              <td className=""></td>
+              <td className=""></td>
+              <td className="md:max-xl:hidden"></td>
             </tr>
             {recentlyPlayed?.items.map((item, index) => {
               const playedAtDate = new Date(item.played_at);
