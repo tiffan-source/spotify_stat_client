@@ -100,3 +100,40 @@ table {
   background: #555;
 }
 /* Scrollbar */
+
+/* Clock */
+.clock-svg .hour-hand,
+.clock-svg .minute-hand {
+  transform-origin: center;
+  transition: transform 0.8s ease-in-out;
+}
+
+.clock-svg.hovered .hour-hand {
+  transform: rotate(60deg);
+}
+
+.clock-svg.hovered .minute-hand {
+  transform: rotate(60deg);
+}
+
+/* Clock */
+
+/* Heartbeat */
+.heartbeat {
+  animation: vibrate-1 4s infinite ease-in-out both;
+}
+
+@keyframes vibrate-1 {
+  0% {
+    transform: translate(0, 0px);
+  }
+  50% {
+    transform: translate(0px, 10px);
+  }
+  100% {
+    transform: translate(0, -0px);
+  }
+}
+
+
+

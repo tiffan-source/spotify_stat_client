@@ -59,6 +59,11 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   {currentlyPlaying?.item.artists[0].name}
                 </div>
               )}
+              {currentlyPlaying?.currently_playing_type === 'episode' && (
+                <div className="text-white text-left animation-slide-in-right">
+                  Episode - Episode - Episode
+                </div>
+              )}
               {currentlyPlaying?.currently_playing_type === 'ad' && (
                 <div className="text-white text-left animation-slide-in-right">
                   Advertisement - Advertisement - Advertisement
@@ -82,9 +87,16 @@ const UserProfile: React.FC<UserProfileProps> = ({
               <div className="h-1.5 bg-white rounded-full overflow-hidden">
                 <progress className="h-full bg-primary" value={50} max={100} />
               </div>
-              <p className="text-white text-[.6rem] font-thin ml-2">
-                {formattedDuration}
-              </p>
+              {currentlyPlaying?.currently_playing_type === undefined ||
+              currentlyPlaying?.currently_playing_type === 'episode' ? (
+                <p className="text-white text-[.6rem] text-left font-bold ml-2">
+                  ∞
+                </p>
+              ) : (
+                <p className="text-white text-[.6rem] text-left font-bold ml-2">
+                  {formattedDuration}
+                </p>
+              )}
             </div>
 
             <p className="text-white text-[.6rem] text-left font-bold">

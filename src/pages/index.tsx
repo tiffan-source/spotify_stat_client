@@ -27,11 +27,11 @@ export default function Home() {
   const [timeRange, setTimeRange] = useState('medium_term');
 
   const [formattedDuration, setFormattedDuration] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<
-    'tracks' | 'artists' | 'playlists'
-  >('tracks');
+  const [activeTab, setActiveTab] = useState<'tracks' | 'artists' | 'genres'>(
+    'tracks',
+  );
 
-  const handleTabClick = (tab: 'tracks' | 'artists' | 'playlists') => {
+  const handleTabClick = (tab: 'tracks' | 'artists' | 'genres') => {
     setActiveTab(tab);
   };
 
@@ -138,7 +138,7 @@ export default function Home() {
     };
 
     fetchData();
-  }, [timeRange, currentlyPlaying]);
+  }, [timeRange]);
 
   return (
     <div className="min-h-screen grid grid-cols-5 gap-2 p-2">
@@ -180,13 +180,13 @@ export default function Home() {
               </button>
               <button
                 className={` font-bold px-4 py-2 rounded-full ${
-                  activeTab === 'playlists'
+                  activeTab === 'genres'
                     ? 'active bg-secondary text-white'
                     : 'bg-white'
                 }`}
-                onClick={() => handleTabClick('playlists')}
+                onClick={() => handleTabClick('genres')}
               >
-                Top Playlists
+                Top Genres
               </button>
             </div>
           </div>
