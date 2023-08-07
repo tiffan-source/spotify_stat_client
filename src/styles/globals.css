@@ -10,7 +10,6 @@ body {
   background-color: var(--color-main);
 }
 
-
 .noise{
   pointer-events: none;
 }
@@ -136,4 +135,14 @@ table {
 }
 
 
+/* Analyze */
+.analyze-svg {
+  transform-origin: center;
+  transition: transform 1s ease-in-out;
+}
 
+.analyze-svg.hovered {
+  transform: rotate(180deg);
+}
+
+/* Analyze */

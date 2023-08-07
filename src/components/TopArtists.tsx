@@ -45,7 +45,9 @@ const TopArtists: React.FC<TopArtistsProps> = ({
                     alt="Artist Image"
                     width={200}
                     height={200}
-                    className={index === 0 ? 'heartbeat' : ''}
+                    className={
+                      index === 0 ? 'heartbeat h-48 w-48' : 'h-48 w-48'
+                    }
                   />
                 </div>
                 <div className="text-center">

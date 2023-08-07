@@ -6,6 +6,7 @@ import {
   getRecentlyPlayed,
   getTopArtists,
   getTopTracks,
+  getUserPlaylists,
 } from '@/lib/spotify';
 
 import TopTracks from '@/components/TopTracks';
@@ -14,6 +15,7 @@ import TopArtists from '@/components/TopArtists';
 import { CurrentlyPlaying, RecentlyPlayed, User } from '@/lib/interfaces';
 import UserProfile from '@/components/UserProfile';
 import TopGenres from '@/components/TopGenres';
+import UserPlaylists from '@/components/UserPlaylists';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,6 +27,8 @@ export default function Home() {
   const [topTracks, setTopTracks] = useState(null);
   const [topArtists, setTopArtists] = useState(null);
   const [timeRange, setTimeRange] = useState('medium_term');
+
+  const [userPlaylists, setUserPlaylists] = useState(null);
 
   const [formattedDuration, setFormattedDuration] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'tracks' | 'artists' | 'genres'>(
@@ -94,22 +98,26 @@ export default function Home() {
           recentlyPlayedResponse,
           topTracksResponse,
           topArtistsResponse,
+          userPlaylistsResponse,
         ] = await Promise.all([
           getCurrentlyPlaying(accessToken),
           getRecentlyPlayed(accessToken),
           getTopTracks(accessToken, timeRange),
           getTopArtists(accessToken, timeRange),
+          getUserPlaylists(accessToken),
         ]);
 
         console.log(currentlyPlayingResponse, 'currently playing');
         console.log(recentlyPlayedResponse, 'recently played');
         console.log(topTracksResponse, 'top tracks');
         console.log(topArtistsResponse, 'top artists');
+        console.log(userPlaylistsResponse, 'user playlists');
 
         setCurrentlyPlaying(currentlyPlayingResponse);
         setRecentlyPlayed(recentlyPlayedResponse);
         setTopTracks(topTracksResponse);
         setTopArtists(topArtistsResponse);
+        setUserPlaylists(userPlaylistsResponse);
 
         // Calculate and format the duration for currently playing track
         if (currentlyPlayingResponse?.item?.artists[0]?.name) {
@@ -196,7 +204,7 @@ export default function Home() {
       </div>
       {/* Right column */}
       <div className="col-span-1 flex flex-col">
-        <div className="h-64 bg-primary rounded-lg"></div>
+        <UserPlaylists userPlaylists={userPlaylists} />
         <div className="h-72 bg-primary rounded-lg mt-2 flex-grow"></div>
       </div>
 
@@ -205,23 +213,3 @@ export default function Home() {
     </div>
   );
 }
-
-/*
-export const getServerSideProps = withSession(async ({ req }: any) => {
-  // Here, you can perform your authorization check
-  const userToken = req.session.get('access_token');
-
-  if (!userToken) {
-    return {
-      redirect: {
-        destination: '/login', // Redirect to login page if not authenticated
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: { userToken },
-  };
-});
-*/
