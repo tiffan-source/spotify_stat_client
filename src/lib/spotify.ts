@@ -102,7 +102,70 @@ export async function getUserPlaylists(accessToken: string) {
         },
       },
     );
-    return response.data;
+    const playlists = response.data.items;
+
+    const items = await Promise.all(
+      playlists.map(async (playlist: { id: any }) => {
+        const tracksResponse = await axios.get(
+          `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+        const tracks = tracksResponse.data.items;
+
+        const artistIds = tracks
+          .filter((track: any) => track.track.artists.length > 0)
+          .map((track: any) => track.track.artists[0].id)
+          .filter(
+            (value: string, index: number, self: string[]) =>
+              self.indexOf(value) === index,
+          )
+          .slice(0, 50);
+
+        if (artistIds.length > 0) {
+          const artistsResponse = await axios.get(
+            `https://api.spotify.com/v1/artists`,
+            {
+              params: {
+                ids: artistIds.join(','),
+              },
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+          );
+
+          const genres = artistsResponse.data.artists.flatMap(
+            (artist: any) => artist.genres,
+          );
+
+          // Count occurrences of each genre
+          const genreCount: any = {};
+          genres.forEach((genre: string) => {
+            genreCount[genre] = (genreCount[genre] || 0) + 1;
+          });
+
+          const topGenres = Object.keys(genreCount)
+            .sort((a, b) => genreCount[b] - genreCount[a])
+            .slice(0, 3)
+            .map((genre) => {
+              return {
+                name: genre,
+                percentage: Math.round(
+                  (genreCount[genre] / genres.length) * 100,
+                ),
+              };
+            });
+
+          return { ...playlist, genres: topGenres };
+        }
+      }),
+    );
+
+    return { items };
   } catch (error) {
     console.error('Failed to fetch user playlists:', error);
     throw error;

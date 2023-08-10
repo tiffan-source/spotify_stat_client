@@ -35,22 +35,6 @@ export interface RecentlyPlayed {
   }[];
 }
 
-export interface RecentlyPlayed {
-  items: {
-    played_at: string;
-    track: {
-      external_urls: {
-        spotify: string;
-      };
-      artists: {
-        name: string;
-      }[];
-      name: string;
-      duration_ms: number;
-    };
-  }[];
-}
-
 export interface TopTracks {
   items: {
     album: {
@@ -119,11 +103,19 @@ export interface TopArtistsProps {
 }
 
 export interface UserPlaylistsProps {
-  userPlaylists: UserPlaylists | null;
+  userPlaylists: IUserPlaylists | null;
 }
 
-export interface UserPlaylists {
+export interface IUserPlaylists {
   items: {
+    tracks: {
+      href: string;
+      total: number;
+    };
+    genres: {
+      name: string;
+      percentage: number;
+    }[];
     collaborative: boolean;
     description: string;
     external_urls: {
@@ -150,10 +142,6 @@ export interface UserPlaylists {
     primary_color: string;
     public: boolean;
     snapshot_id: string;
-    tracks: {
-      href: string;
-      total: number;
-    };
     type: string;
     uri: string;
   }[];

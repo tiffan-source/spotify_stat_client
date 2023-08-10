@@ -12,10 +12,16 @@ import {
 import TopTracks from '@/components/TopTracks';
 import TopArtists from '@/components/TopArtists';
 
-import { CurrentlyPlaying, RecentlyPlayed, User } from '@/lib/interfaces';
+import {
+  CurrentlyPlaying,
+  RecentlyPlayed,
+  User,
+  IUserPlaylists,
+} from '@/lib/interfaces';
 import UserProfile from '@/components/UserProfile';
 import TopGenres from '@/components/TopGenres';
 import UserPlaylists from '@/components/UserPlaylists';
+import { useTabBar } from '@/lib/useTabs';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,16 +34,34 @@ export default function Home() {
   const [topArtists, setTopArtists] = useState(null);
   const [timeRange, setTimeRange] = useState('medium_term');
 
-  const [userPlaylists, setUserPlaylists] = useState(null);
-
-  const [formattedDuration, setFormattedDuration] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'tracks' | 'artists' | 'genres'>(
-    'tracks',
+  const [userPlaylists, setUserPlaylists] = useState<IUserPlaylists | null>(
+    null,
   );
 
-  const handleTabClick = (tab: 'tracks' | 'artists' | 'genres') => {
-    setActiveTab(tab);
-  };
+  const [formattedDuration, setFormattedDuration] = useState<string>('');
+  const {
+    tabsRef,
+    activeTabIndex,
+    tabUnderlineWidth,
+    tabUnderlineLeft,
+    setActiveTabIndex,
+  } = useTabBar();
+  const activeTab =
+    activeTabIndex !== null
+      ? ['tracks', 'artists', 'genres'][activeTabIndex]
+      : 'tracks';
+
+  const tabs = [
+    {
+      name: 'Top Tracks',
+    },
+    {
+      name: 'Top Artists',
+    },
+    {
+      name: 'Top Genres',
+    },
+  ];
 
   const handleTimeRangeChange = (event: any) => {
     setTimeRange(event.target.value);
@@ -107,12 +131,12 @@ export default function Home() {
           getUserPlaylists(accessToken),
         ]);
 
-        console.log(currentlyPlayingResponse, 'currently playing');
+        /*        console.log(currentlyPlayingResponse, 'currently playing');
         console.log(recentlyPlayedResponse, 'recently played');
         console.log(topTracksResponse, 'top tracks');
         console.log(topArtistsResponse, 'top artists');
+        console.log(userPlaylistsResponse, 'user playlists');*/
         console.log(userPlaylistsResponse, 'user playlists');
-
         setCurrentlyPlaying(currentlyPlayingResponse);
         setRecentlyPlayed(recentlyPlayedResponse);
         setTopTracks(topTracksResponse);
@@ -165,41 +189,34 @@ export default function Home() {
       <div className="col-span-3 flex flex-col">
         <div className="h-32 bg-primary rounded-lg">
           <div className="flex flex-col justify-center h-full">
-            <div className="flex justify-between px-5">
-              <button
-                className={`font-bold px-4 py-2 rounded-full ${
-                  activeTab === 'tracks'
-                    ? 'active bg-secondary text-white'
-                    : 'bg-white'
-                }`}
-                onClick={() => handleTabClick('tracks')}
+            <div className="flex relative h-16 gap-8  backdrop-blur-sm justify-between px-5">
+              <span
+                className="flex absolute bottom-0 top-0 -z-10 overflow-hidden rounded-3xl py-2 transition-all duration-300"
+                style={{ left: tabUnderlineLeft, width: tabUnderlineWidth }}
               >
-                Top Tracks
-              </button>
-              <button
-                className={` font-bold px-4 py-2 rounded-full ${
-                  activeTab === 'artists'
-                    ? 'active bg-secondary text-white'
-                    : 'bg-white'
-                }`}
-                onClick={() => handleTabClick('artists')}
-              >
-                Top Artists
-              </button>
-              <button
-                className={` font-bold px-4 py-2 rounded-full ${
-                  activeTab === 'genres'
-                    ? 'active bg-secondary text-white'
-                    : 'bg-white'
-                }`}
-                onClick={() => handleTabClick('genres')}
-              >
-                Top Genres
-              </button>
+                <span className="h-full w-full rounded-3xl bg-secondary"></span>
+              </span>
+
+              {tabs.map((tab, index) => {
+                const isActive = activeTabIndex === index;
+
+                return (
+                  <button
+                    key={index}
+                    ref={(element) => (tabsRef.current[index] = element)}
+                    className={`${isActive ? '' : 'hover:text-neutral-200'}
+                my-auto cursor-pointer select-none text-center text-white font-bold px-4 py-2 rounded-full`}
+                    onClick={() => {
+                      setActiveTabIndex(index);
+                    }}
+                  >
+                    {tab.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
-        {/* Conditionally render the active content based on the activeTab state */}
         {activeContent}
       </div>
       {/* Right column */}
